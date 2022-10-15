@@ -34,7 +34,7 @@
 //! The `MALLOC_CONF` environment variable affects the execution of the allocation functions.
 //!
 //! For the documentation of the [`MALLCTL` namespace visit the jemalloc
-//! documenation][jemalloc_mallctl].
+//! documentation][jemalloc_mallctl].
 //!
 //! [jemalloc_docs]: http://jemalloc.net/jemalloc.3.html
 //! [jemalloc_wiki]: https://github.com/jemalloc/jemalloc/wiki

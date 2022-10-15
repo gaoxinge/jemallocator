@@ -142,21 +142,15 @@ fn main() {
     // Run configure:
     let configure = build_dir.join("configure");
     let mut cmd = Command::new("sh");
-    cmd.arg(
-        configure
-            .to_str()
-            .unwrap()
-            .replace("C:\\", "/c/")
-            .replace('\\', "/"),
-    )
-    .current_dir(&build_dir)
-    .env("CC", compiler.path())
-    .env("CFLAGS", cflags.clone())
-    .env("LDFLAGS", cflags.clone())
-    .env("CPPFLAGS", cflags)
-    .arg("--disable-cxx")
-    .arg("--enable-doc=no")
-    .arg("--enable-shared=no");
+    cmd.arg(to_slash(configure.to_str().unwrap()))
+        .current_dir(&build_dir)
+        .env("CC", compiler.path())
+        .env("CFLAGS", cflags.clone())
+        .env("LDFLAGS", cflags.clone())
+        .env("CPPFLAGS", cflags)
+        .arg("--disable-cxx")
+        .arg("--enable-doc=no")
+        .arg("--enable-shared=no");
 
     if target.contains("ios") {
         // newer iOS deviced have 16kb page sizes:
@@ -248,7 +242,7 @@ fn main() {
 
     cmd.arg(format!("--host={}", gnu_target(&target)));
     cmd.arg(format!("--build={}", gnu_target(&host)));
-    cmd.arg(format!("--prefix={}", out_dir.display()));
+    cmd.arg(format!("--prefix={}", to_slash(out_dir.to_str().unwrap())));
 
     run_and_log(&mut cmd, &build_dir.join("config.log"));
 
@@ -281,6 +275,14 @@ fn main() {
         .arg("-j")
         .arg(num_jobs));
 
+    if target.contains("windows") && target.contains("gnu") {
+        run(Command::new("ar")
+            .current_dir(&build_dir)
+            .arg("rsc")
+            .arg("lib/libjemalloc.a")
+            .arg("src/*.o"));
+    }
+
     println!("cargo:root={}", out_dir.display());
 
     // Linkage directives to pull in jemalloc and its dependencies.
@@ -295,7 +297,7 @@ fn main() {
     } else {
         println!("cargo:rustc-link-lib=static=jemalloc_pic");
     }
-    println!("cargo:rustc-link-search=native={}/lib", build_dir.display());
+    println!("cargo:rustc-link-search=native={}", build_dir.join("lib").display());
     if target.contains("android") {
         println!("cargo:rustc-link-lib=gcc");
     } else if !target.contains("windows") {
@@ -356,6 +358,10 @@ fn make_cmd(host: &str) -> &'static str {
     } else {
         "make"
     }
+}
+
+fn to_slash(path: &str) -> String {
+    path.replace("C:\\", "/c/").replace("\\", "/")
 }
 
 struct BackgroundThreadSupport {
